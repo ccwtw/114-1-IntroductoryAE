@@ -450,7 +450,7 @@ dplyr 是使用 R 進行資料分析時的入門學習套件之一，同時結�
 .panel[.panel-name[Select]
 `select()` 可以選擇指定欄位，且支援連續選取 `:`。
 ```{r}
-df1 <- df %>% select(manufacturer:year); head(df, n = 3)
+df1 <- df %>% select(manufacturer:year); head(df1, n = 3)
 ```
 ]
 .panel[.panel-name[Filter]
@@ -465,10 +465,10 @@ df2
 .panel[.panel-name[Mutate]
 `mutate()` 可以建立新變數，搭配其他指令以達到建立新變數的要求。
 ```{r results = 'hide'}
-df %>% mutate(county == "Germany")
+df %>% mutate(county = "Germany")
 ```
 ```{r echo = F}
-df %>% mutate(county == "Germany")
+df %>% mutate(county = "Germany")
 ```
 ]
 .panel[.panel-name[Summarize]

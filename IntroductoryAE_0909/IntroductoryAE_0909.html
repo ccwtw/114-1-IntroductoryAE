@@ -1854,14 +1854,14 @@ dplyr 是使用 R 進行資料分析時的入門學習套件之一，同時結�
 `select()` 可以選擇指定欄位，且支援連續選取 `:`。
 
 ``` r
-df1 &lt;- df %&gt;% select(manufacturer:year); head(df, n = 3)
+df1 &lt;- df %&gt;% select(manufacturer:year); head(df1, n = 3)
 ```
 
 ```
-##   manufacturer model displ year cyl  county
-## 1         audi    a4   1.8 1999   4 Germany
-## 2         audi    a4   1.8 1999   4 Germany
-## 3         audi    a4   2.0 2008   4 Germany
+##   manufacturer model displ year
+## 1         audi    a4   1.8 1999
+## 2         audi    a4   1.8 1999
+## 3         audi    a4   2.0 2008
 ```
 ]
 .panel[.panel-name[Filter]
@@ -1881,17 +1881,17 @@ df2 &lt;- df %&gt;% filter(year == 1999 &amp; displ &gt; 2)
 `mutate()` 可以建立新變數，搭配其他指令以達到建立新變數的要求。
 
 ``` r
-df %&gt;% mutate(county == &quot;Germany&quot;)
+df %&gt;% mutate(county = &quot;Germany&quot;)
 ```
 
 ```
-##   manufacturer model displ year cyl  county county == &quot;Germany&quot;
-## 1         audi    a4   1.8 1999   4 Germany                TRUE
-## 2         audi    a4   1.8 1999   4 Germany                TRUE
-## 3         audi    a4   2.0 2008   4 Germany                TRUE
-## 4         audi    a4   2.0 2008   4 Germany                TRUE
-## 5         audi    a4   2.8 1999   6 Germany                TRUE
-## 6         audi    a4   2.8 1999   6 Germany                TRUE
+##   manufacturer model displ year cyl  county
+## 1         audi    a4   1.8 1999   4 Germany
+## 2         audi    a4   1.8 1999   4 Germany
+## 3         audi    a4   2.0 2008   4 Germany
+## 4         audi    a4   2.0 2008   4 Germany
+## 5         audi    a4   2.8 1999   6 Germany
+## 6         audi    a4   2.8 1999   6 Germany
 ```
 ]
 .panel[.panel-name[Summarize]
