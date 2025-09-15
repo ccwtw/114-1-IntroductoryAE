@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>應用計量經濟學導論</title>
+    <meta charset="utf-8" />
+    <script src="IntroductoryAE_0916_files/header-attrs/header-attrs.js"></script>
+    <link href="IntroductoryAE_0916_files/panelset/panelset.css" rel="stylesheet" />
+    <script src="IntroductoryAE_0916_files/panelset/panelset.js"></script>
+    <script src="IntroductoryAE_0916_files/clipboard/clipboard.min.js"></script>
+    <link href="IntroductoryAE_0916_files/xaringanExtra-clipboard/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="IntroductoryAE_0916_files/xaringanExtra-clipboard/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <link href="IntroductoryAE_0916_files/xaringanExtra-extra-styles/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <script src="IntroductoryAE_0916_files/xaringanExtra-progressBar/progress-bar.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# 應用計量經濟學導論
+]
+.subtitle[
+## 實習課
+]
+.author[
+### <div style="margin-top:-18px; line-height:1.2;">
+<p><span style="font-weight:700;">王俊欽</span><br/>
+<span style="font-weight:700;"><a href="mailto:d14627001@ntu.edu.tw" class="email">d14627001@ntu.edu.tw</a></span><br/>
+<span style="font-weight:700;">臺灣大學農業經濟研究所, 統計碩士學位學程</span><br/>
+<span style="font-weight:700;">2025/09/16</span><br/>
+ </p>
+</div>
+]
+
+---
+
+
+
+layout: true
+background-image: url(https://www.agec.ntu.edu.tw/uploads/asset/data/675f864c74ccc38a768f8254/%E6%9C%AA%E4%BE%86%E5%B1%95%E6%9C%9B%E5%9C%96%E7%89%87.png)
+background-position: 98% 2%
+background-size: 5%
+
+
+<style>.xe__progress-bar__container {
+  bottom:0;
+  opacity: 1;
+  position:absolute;
+  right:0;
+  left: 0;
+}
+.xe__progress-bar {
+  height: 0.25em;
+  background-color: #EFBE43;
+  width: calc(var(--slide-current) / var(--slide-total) * 100%);
+}
+.remark-visible .xe__progress-bar {
+  animation: xe__progress-bar__wipe 200ms forwards;
+  animation-timing-function: cubic-bezier(.86,0,.07,1);
+}
+@keyframes xe__progress-bar__wipe {
+  0% { width: calc(var(--slide-previous) / var(--slide-total) * 100%); }
+  100% { width: calc(var(--slide-current) / var(--slide-total) * 100%); }
+}</style>
+
+
+
+
+
+---
+## Recall pipeline
+
+- ` %&gt;% ` 是 tidy 家族中常用且使程式碼更易閱讀的運算子
+
+- 使用 pipeline 建立工作流程（workflow）有效建立操作邏輯
+
+
+``` r
+library(magrittr) # library(dplyr) 同時就會順帶 library(magrittr)
+```
+
+
+- 預設是將左方 R object 帶入右方指令的第一個參數
+
+.pull-left[
+f(x)
+
+``` r
+sum(c(1:5))
+```
+
+```
+## [1] 15
+```
+]
+
+.pull-right[
+x %&gt;% f()
+
+``` r
+c(1:5) %&gt;% sum()
+```
+
+```
+## [1] 15
+```
+]
+
+---
+## Recall pipeline
+**penguins** 資料集中包含企鵝品種、居住島、喙長寬與體重等等變數。
+
+``` r
+head(penguins)
+```
+
+```
+##   species    island bill_len bill_dep flipper_len body_mass    sex year
+## 1  Adelie Torgersen     39.1     18.7         181      3750   male 2007
+## 2  Adelie Torgersen     39.5     17.4         186      3800 female 2007
+## 3  Adelie Torgersen     40.3     18.0         195      3250 female 2007
+## 4  Adelie Torgersen       NA       NA          NA        NA   &lt;NA&gt; 2007
+## 5  Adelie Torgersen     36.7     19.3         193      3450 female 2007
+## 6  Adelie Torgersen     39.3     20.6         190      3650   male 2007
+```
+---
+## Recall pipeline
+使用 dplyr 指令可以讓工作流程更清晰，例如今天要統計不同品種、性別間的企鵝嘴喙的長寬比最小值是多少。
+.panelset[
+.panel[.panel-name[w/o dplyr]
+
+
+``` r
+summarize(select(group_by(mutate(drop_na(
+          penguins), bill_ratio = bill_len/ bill_dep), species, sex), species, sex, bill_ratio), min_bill_ratio = min(bill_ratio), .groups = "keep")
+```
+
+```
+## # A tibble: 6 × 3
+## # Groups:   species, sex [6]
+##   species   sex    min_bill_ratio
+##   &lt;fct&gt;     &lt;fct&gt;           &lt;dbl&gt;
+## 1 Adelie    female           1.76
+## 2 Adelie    male             1.64
+## 3 Chinstrap female           2.35
+## 4 Chinstrap male             2.48
+## 5 Gentoo    female           2.84
+## 6 Gentoo    male             2.57
+```
+]
+.panel[.panel-name[w/ dplyr]
+
+
+``` r
+penguins %&gt;%
+  drop_na() %&gt;%
+  mutate(bill_ratio = bill_len/ bill_dep) %&gt;% 
+  group_by(species, sex) %&gt;%
+  select(species, sex, bill_ratio) %&gt;% 
+  summarize(min_bill_ratio = min(bill_ratio), .groups = 'keep')
+```
+
+```
+## # A tibble: 6 × 3
+## # Groups:   species, sex [6]
+##   species   sex    min_bill_ratio
+##   &lt;fct&gt;     &lt;fct&gt;           &lt;dbl&gt;
+## 1 Adelie    female           1.76
+## 2 Adelie    male             1.64
+## 3 Chinstrap female           2.35
+## 4 Chinstrap male             2.48
+## 5 Gentoo    female           2.84
+## 6 Gentoo    male             2.57
+```
+]
+]
+---
+## Recall pipeline
+&lt;img src="./Pipe_baking_magrittr_backAssign.gif" width="55%" style="display: block; margin: auto;" /&gt;
+&lt;p style="text-align: center;"&gt;圖片來源：&lt;a href="https://github.com/arthurwelle/VIS/blob/master/Pipe_Cake/Pipe_baking_magrittr_backAssign.gif"&gt;Arthur Welle&lt;/a&gt;&lt;/p&gt;
+
+---
+## Merge
+通常在整理資料的過程中，需要透過結合各個不同類型或是時間段的資料並加以分析，這時就必須將多個資料進行合併。實務上，資料合併大致可分為：
+
+- 垂直合併：通常在合併相同但**時間不同**的資料集，或是合併**不同公司或單位**的財務報表或股價資料，這些資料集通常都會有相同的欄位（column）名稱與數量，整體資料寬度不會改變，例如：將一月至十二月的天氣資料垂直合併。
+
+- 水平合併：通常在合併有關連的資料集，這類資料通常主題或調查製作單位不一樣，兩個資料集的行數或欄位皆可以不盡相同但是必須**具有一個或多個索引鍵（key value）**使兩個資料集有依據的水平合併起來，例如：將國家總經資料與社經資料依照國家名稱水平合併。
+
+---
+## Vertically Merge
+將具有相同欄位數量與名稱（非必要）的資料以上下疊加的方式垂直合併。
+.panelset[
+.panel[.panel-name[rbind]
+.pull-left[
+
+``` r
+d1 &lt;- tribble(
+  ~id, ~name, ~score,
+  1, "Chloe", 95,
+  2, "Leo"  , 60,
+  3, "Sandy", 82
+)
+d2 &lt;- tibble(
+  id = c(4:6),
+  name = c("Tim", "Irene", "Cindy"),
+  score = id * 10 + 15
+)
+```
+]
+.pull-right[
+
+``` r
+rbind(d1, d2)
+```
+
+```
+## # A tibble: 6 × 3
+##      id name  score
+##   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;
+## 1     1 Chloe    95
+## 2     2 Leo      60
+## 3     3 Sandy    82
+## 4     4 Tim      55
+## 5     5 Irene    65
+## 6     6 Cindy    75
+```
+]
+]
+.panel[.panel-name[difference column]
+當資料集中存在不同變數名稱時，未合併到的部分將為 NA。
+.pull-left[
+
+``` r
+d3 &lt;- tribble(
+  ~id, ~name, ~math,
+  1, "Chloe", 95,
+  2, "Leo"  , 60,
+  3, "Sandy", 82
+)
+d4 &lt;- tibble(
+  id = c(4:6),
+  name = c("Tim", "Irene", "Cindy"),
+  english = id * 10 + 15
+)
+```
+]
+.pull-right[
+
+``` r
+d3 %&gt;% bind_rows(d4)
+```
+
+```
+## # A tibble: 6 × 4
+##      id name   math english
+##   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;
+## 1     1 Chloe    95      NA
+## 2     2 Leo      60      NA
+## 3     3 Sandy    82      NA
+## 4     4 Tim      NA      55
+## 5     5 Irene    NA      65
+## 6     6 Cindy    NA      75
+```
+]
+]
+]
+
+---
+## Vertically Merge
+如果兩個資料集的變數名稱不同時，需要先將變數名稱修改一致，再進行垂直合併。
+.panelset[
+.panel[.panel-name[data]
+.pull-left[
+
+``` r
+d5 &lt;- tribble(
+  ~order, ~name, ~math,
+  1, "Chloe", 95,
+  2, "Leo"  , 60,
+  3, "Sandy", 82
+)
+```
+
+```
+## # A tibble: 3 × 3
+##   order name   math
+##   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;
+## 1     1 Chloe    95
+## 2     2 Leo      60
+## 3     3 Sandy    82
+```
+]
+.pull-right[
+
+``` r
+d6 &lt;- tibble(
+  id = c(4:6),
+  name = c("Tim", "Irene", "Cindy"),
+  english = id * 10 + 15
+)
+```
+
+```
+## # A tibble: 3 × 3
+##      id name  english
+##   &lt;int&gt; &lt;chr&gt;   &lt;dbl&gt;
+## 1     4 Tim        55
+## 2     5 Irene      65
+## 3     6 Cindy      75
+```
+]
+]
+.panel[.panel-name[rename]
+
+``` r
+d5 %&gt;% rename(id = order) %&gt;% bind_rows(d6)
+```
+
+```
+## # A tibble: 6 × 4
+##      id name   math english
+##   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;
+## 1     1 Chloe    95      NA
+## 2     2 Leo      60      NA
+## 3     3 Sandy    82      NA
+## 4     4 Tim      NA      55
+## 5     5 Irene    NA      65
+## 6     6 Cindy    NA      75
+```
+]
+]
+
+---
+## Horizontally Merge
+通常在整理資料的過程中，需要結合各個不同類型的資料並加以分析，這時需要依據**索引鍵（key value）**將不同資料水平合併，tidyverse 中有幾種 join 方式大致可分為：
+.left-column[
+
+- Full Join
+
+- Left Join
+
+- Right Join
+
+- Inner Join
+
+- Semi Join
+]
+.right-column[
+&lt;img src="./tidyversrejoin.png" width="75%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+## Horizontally Merge
+有兩個資料集，資料集 people 中包含個人的 id, name 兩個變數；資料集 school 中包含個人 id, school 兩個變數，我們可以藉由索引鍵 **id** 來水平合併兩個資料集。
+
+
+``` r
+people &lt;- tibble(
+  id = c(1, 2, 3, 4, 6),
+  name = c("Tim", "Irene", "Cindy", "Chloe", "Sandy")
+  
+)
+school &lt;- tribble(
+  ~id, ~school,
+  3, "NTU",
+  4, "NTNU",
+  5, "NCCU",
+  7, "NTU"
+)
+```
+
+
+---
+## Horizontally Merge
+依據一或多個索引鍵（key value）對兩個或以上的資料集進行水平合併， `by` argument 可以提供實際要使用的索引鍵，沒設定的話會自動依據被合併的資料集做選擇。
+.panelset[
+.panel[.panel-name[Full]
+
+``` r
+people %&gt;% full_join(school, by = "id")
+```
+
+```
+## # A tibble: 7 × 3
+##      id name  school
+##   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; 
+## 1     1 Tim   &lt;NA&gt;  
+## 2     2 Irene &lt;NA&gt;  
+## 3     3 Cindy NTU   
+## 4     4 Chloe NTNU  
+## 5     6 Sandy &lt;NA&gt;  
+## 6     5 &lt;NA&gt;  NCCU  
+## 7     7 &lt;NA&gt;  NTU
+```
+]
+.panel[.panel-name[Left]
+以左表 people 為主表，將右表 school 向左水平合併。
+
+``` r
+people %&gt;% left_join(school, by = "id")
+```
+
+```
+## # A tibble: 5 × 3
+##      id name  school
+##   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; 
+## 1     1 Tim   &lt;NA&gt;  
+## 2     2 Irene &lt;NA&gt;  
+## 3     3 Cindy NTU   
+## 4     4 Chloe NTNU  
+## 5     6 Sandy &lt;NA&gt;
+```
+]
+.panel[.panel-name[Right]
+以右表 school 為主表，將左表 people 向右水平合併。
+
+``` r
+people %&gt;% right_join(school, by = "id")
+```
+
+```
+## # A tibble: 4 × 3
+##      id name  school
+##   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; 
+## 1     3 Cindy NTU   
+## 2     4 Chloe NTNU  
+## 3     5 &lt;NA&gt;  NCCU  
+## 4     7 &lt;NA&gt;  NTU
+```
+]
+.panel[.panel-name[Inner]
+沒設定 by 什麼索引鍵的話，則自動依據被合併的資料集做選擇。
+
+``` r
+people %&gt;% inner_join(school)
+```
+
+```
+## Joining with `by = join_by(id)`
+```
+
+```
+## # A tibble: 2 × 3
+##      id name  school
+##   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; 
+## 1     3 Cindy NTU   
+## 2     4 Chloe NTNU
+```
+]
+]
+
+---
+## Horizontally Merge
+
+`semi_join()` 與 `inner_join()` 差別在於 `semi_join()` 不會保留右表資料。
+.pull-left[
+&lt;img src="./semi-join.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+.pull-right[
+&lt;img src="./inner-join.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+&lt;p style="text-align: center;"&gt;圖片來源：&lt;a href="https://github.com/gadenbuie/tidyexplain"&gt;Garrick Aden-Buie tidyexplain&lt;/a&gt;&lt;/p&gt;
+---
+## Horizontally Merge
+
+`semi_join(x, y)` 是當遇到一種情況：x 為客戶資料、y 為過去一月消費金額超過 1 萬元的 VIP 客戶資料，我只想從 x 中挑出這些 VIP 客戶，並發送優惠券給他們。此時，我只需要 y 資料集中的客戶 id 來過濾 x 資料集中的資料，不需要 y 資料集中的其他變數。
+
+``` r
+customers &lt;- tibble(
+  id    = c(101:106),
+  name  = c("Tim", "Irene", "Cindy", "Chloe", "Sandy", "Leo"),
+  age = c(26, 32, 21, 29, 35, 43)
+)
+
+vip_list &lt;- tibble(
+  id          = c(101, 104, 106),
+  value       = c(12500, 22100, 15000),
+  order_count = c(3, 5, 2)
+)
+```
+---
+## Horizontally Merge
+.panelset[
+.panel[.panel-name[Semi]
+從左表 customers 中篩選出 id 也在右表 vip_list 的資料，篩選完後只保留左表資料。
+
+``` r
+customers %&gt;% semi_join(vip_list, by = "id")
+```
+
+```
+## # A tibble: 3 × 3
+##      id name    age
+##   &lt;int&gt; &lt;chr&gt; &lt;dbl&gt;
+## 1   101 Tim      26
+## 2   104 Chloe    29
+## 3   106 Leo      43
+```
+]
+.panel[.panel-name[Anti]
+從左表 customers 中篩選出 id 不在右表 vip_list 的資料，篩選完後只保留左表資料。
+
+``` r
+customers %&gt;% anti_join(vip_list, by = "id")
+```
+
+```
+## # A tibble: 3 × 3
+##      id name    age
+##   &lt;int&gt; &lt;chr&gt; &lt;dbl&gt;
+## 1   102 Irene    32
+## 2   103 Cindy    21
+## 3   105 Sandy    35
+```
+]
+]
+
+---
+## Horizontally Merge
+如果兩個資料集的索引鍵（key value）名稱不同時，在 `by` argument 中手動指定左右表的索引鍵，寫法為 `by = c("左表索引鍵" = "右表索引鍵")`。
+
+``` r
+people &lt;- tibble(
+  ID = c(1, 2, 3, 4, 6),
+  name = c("Tim", "Irene", "Cindy", "Chloe", "Sandy"))
+school &lt;- tribble(
+  ~id, ~school,
+  3, "NTU",
+  4, "NTNU",
+  5, "NCCU",
+  7, "NTU")
+
+people %&gt;% inner_join(school, by = c("ID" = "id"))
+```
+
+```
+## # A tibble: 2 × 3
+##      ID name  school
+##   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; 
+## 1     3 Cindy NTU   
+## 2     4 Chloe NTNU
+```
+---
+class: center, middle, inverse
+### 謝謝
+#### 下周見
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
