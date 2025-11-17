@@ -1,0 +1,408 @@
+---
+title: "應用計量經濟學導論"
+subtitle: "實習課"
+author: |
+  <div style="margin-top:-18px; line-height:1.2;">
+    <span style="font-weight:700;">王俊欽</span><br/>
+    <span style="font-weight:700;">d14627001@ntu.edu.tw</span><br/>
+    <span style="font-weight:700;">臺灣大學農業經濟研究所, 統計碩士學位學程</span><br/>
+    <span style="font-weight:700;">2025/11/18</span><br/>
+    &nbsp;
+  </div>
+output:
+  xaringan::moon_reader:
+    self_contained: true
+    css: xaringan-themer.css
+    #css: [xaringan-themer.css, zh-CN.css]
+    #lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+```{r}
+
+```
+
+layout: true
+background-image: url(https://www.agec.ntu.edu.tw/uploads/asset/data/675f864c74ccc38a768f8254/%E6%9C%AA%E4%BE%86%E5%B1%95%E6%9C%9B%E5%9C%96%E7%89%87.png)
+background-position: 98% 2%
+background-size: 5%
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(vistributions)
+library(gginference)
+setwd(dirname(rstudioapi::documentPath()))
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
+xaringanExtra::use_panelset()
+xaringanExtra::use_clipboard()
+xaringanExtra::use_extra_styles(hover_code_line = TRUE)
+```
+```{r xaringanExtra, echo = FALSE}
+xaringanExtra::use_progress_bar(color = "#EFBE43", location = "bottom")
+```
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_duo(
+  # colors
+  primary_color = "#FDF7E9",
+  secondary_color = "#EFBE43",
+  header_color = "#333333",
+  text_color = "#333333",
+  code_inline_color = colorspace::lighten("#333333"),
+  text_bold_color = colorspace::lighten("#333333"),
+  link_color = "#4466B0",
+  title_slide_text_color = "#4466B0",
+
+  # fonts
+  header_font_google = google_font("Martel", "300", "400"),
+  text_font_google = google_font("Lato"),
+  code_font_google = google_font("Fira Mono")
+)
+
+style_extra_css(
+  # 只針對段落 (p) 和列表 (li) 內的 `code`
+  list(
+    "p code, li code" = list(  
+      "border" = "1px solid #F6DB96",
+      "padding" = "2px 4px",
+      "border-radius" = "4px"
+      ),
+    "ul ul" = list(
+      "list-style-type" = "'▸'"  # 第二層使用三角形 (▸)
+      ),
+    "ul ul ul" = list(
+      "list-style-type" = "'✔'"  # 第三層使用勾勾 (✔)
+      ),
+    # 置中
+    ".middle_block" = list(
+      "position" = "absolute",
+      "top" = "50%",
+      "left" = "50%", # 使與預設靠左距離相同
+      "transform" = "translate(-50%, -50%)",
+      "width" = "85%",              # 控制內文寬度（可調整）
+      "text-align" = "left"         
+      ),
+    # 縮排
+    ".indent" = list(
+      "text-indent" = "2em"
+      ),
+    # 自動換行
+    "pre code" = list(
+      "white-space" = "pre-wrap",
+      "word-wrap" = "break-word"
+      ),
+    "pre" = list(
+      "border" = "none",
+      "box-shadow" = "2px 2px 2px 2px #F7EEDA",
+      "padding" = "0.1em",
+      "background" = "none !important",
+      "overflow-x" = "auto",
+      "border-radius" = "1px"
+      ),
+    # 條列圖示顏色
+    "li::marker" = list(
+      "content" = "• ",
+      "color" =  "#EFBE43"
+      )
+    )
+  )
+
+```
+
+
+```{r, echo = FALSE}
+options(servr.daemon = TRUE)
+```
+
+
+
+---
+## Simple Linear Regression
+```{r}
+data(mpg)
+glimpse(mpg)
+```
+
+---
+## Simple Linear Regression
+
+#### 考慮一問題：一般而言，汽車排氣量越大引擎動力越大，油耗（每加侖可跑的英里數）會不會比較差？
+
+#### 我們可以將這個問題寫成一個迴歸方程式
+
+$$hwy=\beta_0 + \beta_{displ} \times displ + \varepsilon$$
+
+在這個問題中 $\beta_{displ}$ 是我們最關注的符號，如何解釋 $\beta_{displ}$？
+
+---
+## Recall correlation
+
+#### 我們可以計算相關係數來描述兩變數的關係。
+
+```{r}
+cor(mpg$displ, mpg$hwy)
+```
+
+---
+## Recall correlation
+
+#### 我們可以透過繪製散布圖來描述兩變數的關係。
+
+```{r out.width="45%", fig.align='center', message=F}
+mpg %>% ggplot(aes(x = displ, y = hwy)) + geom_point() + geom_smooth() + labs(title = "displ vs. hwy, mpg")
+```
+---
+## Recall correlation
+
+#### 我們可以透過繪製散布圖來描述兩變數的關係。
+
+```{r message=F, out.width="45%", fig.align='center'}
+mpg %>% ggplot(aes(x = displ, y = hwy)) + geom_point() + geom_smooth(method = 'lm') + labs(title = "displ vs. hwy, mpg")
+```
+
+---
+## Simple Linear Regression
+
+#### `lm` 可以用來建立一個迴歸式，最基礎的寫法為 `lm(y ~ x, data)`。
+
+$$hwy=\beta_0 + \beta_{displ} \times displ + \varepsilon$$
+
+```{r}
+m1 <- lm(hwy ~ displ, data = mpg)
+m1
+```
+
+---
+## Simple Linear Regression
+
+#### 迴歸結果會存為一個`list` 物件，可以透過 `summary()` 來檢視完整的迴歸結果。
+
+
+```{r}
+summary(m1)
+```
+
+---
+## Simple Linear Regression
+
+#### 一個迴歸物件中包含許多資訊
+
+- 係數（coefficients）
+
+- 殘差（residuals）
+
+- 自由度（df.residual）
+
+- 其他模型資訊...
+
+```{r}
+names(m1)
+```
+
+---
+## Simple Linear Regression
+
+#### 考慮另一問題：一般而言，汽車排氣量越大對於城市（city）與高速（highway）的里程數影響有沒有差異？
+
+$$cty=\beta_0 + \beta_{displ} \times displ + \varepsilon$$
+
+```{r}
+m2 <- lm(cty ~ displ, data = mpg)
+```
+
+---
+## Simple Linear Regression
+
+#### 可以用 `coefficients()` 或 `$` 提取係數。
+```{r}
+coefficients(m1)
+m2$coefficients
+```
+
+#### 根據 m1、 m2 迴歸結果，我們可以歸納出排氣量較大的引擎對於 highway miles 的影響大於 city miles。
+
+---
+## level - log model
+
+$$log(hwy)=\beta_0 + \beta_{displ} \times displ + \varepsilon$$
+
+```{r}
+m3 <- lm(log(hwy) ~ displ, data = mpg)
+m1$coefficients/mean(mpg$hwy)
+m3$coefficients
+```
+
+####　觀察 level - level 與 level - log model 的迴歸結果，可以得到近似的估計結果。
+
+$$\hat{\beta_{m1}} \approx \hat{\beta_{m3}} \times \overline{hwy}$$ 
+
+---
+## Multiple Linear Regression
+#### 基本上與簡單迴歸寫法一樣，只是多了其他感興趣的自變數，各自變數間用 `+` 號連接。
+
+$$hwy=\beta_0 + \beta_{displ} \times displ + \beta_{cyl} \times cyl + \varepsilon$$
+```{r}
+m4 <- lm(hwy ~ displ + cyl, data = mpg); summary(m4)
+```
+
+---
+## ANOVA Table
+
+```{r}
+aov(m4)
+```
+
+---
+## ANOVA Table
+
+```{r}
+summary(aov(m4))
+```
+
+---
+## Interactions
+#### 將交乘項當作自變數放入模型中時，要特別注意寫法，以 `:` 建立單純的交乘項！
+
+$$hwy=\beta_0 + \beta_{1}  displ \times cyl + \varepsilon$$
+
+```{r}
+m5 <- lm(hwy ~ displ:cyl, data = mpg); summary(m5)
+```
+
+---
+## Interactions
+#### 如果用平常用的乘法符號 `*`，你會得到：
+
+$$hwy=\beta_0 + \beta_{displ} \times displ + \beta_{cyl} \times cyl + \beta_{1}  displ \times cyl + \varepsilon$$
+
+```{r}
+m6 <- lm(hwy ~ displ*cyl, data = mpg); summary(m6)
+```
+
+
+---
+## Categorical variable
+#### 建立一個簡單迴歸式：不同車型，油耗（每加侖可跑的英里數）平均有沒有差異？
+
+```{r}
+unique(mpg$class)
+```
+
+- 自變數（independent variable）可以放入 character，但最好是放入 factor。
+
+- 將自動依照字母開頭順序第一位為基準組。
+
+$$hwy = \beta_0 + \beta_{\text{compact}} D_{\text{compact}} + \beta_{\text{midsize}} D_{\text{midsize}} + \beta_{\text{minivan}} D_{\text{minivan}} +\\ \beta_{\text{pickup}} D_{\text{pickup}} + \beta_{\text{subcompact}} D_{\text{subcompact}} + \beta_{\text{suv}} D_{\text{suv}} + \varepsilon$$
+
+---
+## Categorical variable
+
+```{r}
+m8 <- lm(hwy ~ class, data = mpg); summary(m8)
+```
+
+---
+## Matching
+
+#### 使用資料 [Wage](https://www.rdocumentation.org/packages/ISLR/versions/1.4/topics/Wage)，研究各種社經變數對於時薪的影響。
+
+```{r}
+wage <- read.csv('./Wage.csv')
+glimpse(wage)
+```
+
+---
+## Matching
+#### 考慮問題：念大學到底有沒有用？
+
+```{r}
+unique(wage$education)
+wage <- wage %>% mutate(treat = if_else(education == "4. College Grad" |education == "5. Advanced Degree" , 1, 0))
+```
+
+---
+## Estimate ATT
+#### 考慮問題：念大學到底有沒有用？
+
+```{r}
+m9 <- lm(wage ~ treat, data = wage); summary(m9)
+```
+---
+## Matching
+#### 決定使用 Matching 時，問題就會變成：在其他社經條件類似的情況下，念大學到底有沒有用？
+
+#### 先看原始資料的情形：
+
+```{r}
+wage %>% group_by(treat) %>% summarise(mean_age = mean(age, na.rm = T))
+```
+
+---
+## Propensity Score Matching
+
+#### 由於 treat 是一個 dummy variable，我們可以考慮用傾向分數配對法。
+```{r warning = F}
+library(MatchIt)
+m_ps <- matchit(treat ~ age + race + maritl + health + jobclass,
+  data = wage, method = "nearest", ratio = 1)
+m_ps
+```
+
+---
+## Propensity Score Matching
+#### Matching 完後，將匹配資料取出來，原則上這組資料已經幫我們處理其他控制變數可能會帶來的估計誤差。
+
+```{r}
+wage_match <- match.data(m_ps)
+wage_match %>% group_by(treat) %>% summarize(n = n(), mean_age = mean(age, na.rm = T))
+```
+
+---
+## Propensity Score Matching
+
+.pull-left[
+Matching 之前
+```{r}
+t.test(wage[wage$treat == 0, "age"], wage[wage$treat == 1, "age"])
+```
+]
+.pull-right[
+Matching 之後
+```{r}
+t.test(age ~ treat, data = wage_match)
+```
+]
+
+
+---
+## Estimation result
+
+```{r}
+t.test(wage ~ treat, data = wage_match)
+```
+
+---
+## HW2 說明
+#### HW2 繳交方式：
+- **於 NTU COOL 線上繳交。**
+
+- **以壓縮檔繳交作業，命名方式：學號_hw2.zip / rar / 7z。**
+
+- **壓縮檔須包含：學號_hw2.R、學號_hw2_report.pdf。**
+  
+
+#### HW2 繳交期限：
+- **2025-11-25 23:59**
+
+- **實習課作業遲交 24 小時內扣 10 分，超過時間則視為 0 分。**
+
+---
+class: center, middle, inverse
+### 謝謝
+#### 下周見
